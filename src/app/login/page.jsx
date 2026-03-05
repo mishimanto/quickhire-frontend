@@ -1,45 +1,78 @@
 'use client';
+import { Suspense } from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Briefcase, Mail, Lock, Eye, EyeOff, AlertCircle, LogIn } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function LoginPage() {
+// Loading fallback component
+function LoginLoadingFallback() {
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
+      <div className="relative w-full max-w-md">
+        <div className="card p-10">
+          <div className="h-8 w-32 bg-slate-200 rounded-lg mx-auto mb-8 animate-pulse" />
+          
+          <div className="space-y-5">
+            <div>
+              <div className="h-4 w-20 bg-slate-200 rounded mb-2 animate-pulse" />
+              <div className="h-11 bg-slate-200 rounded-xl animate-pulse" />
+            </div>
+             
+            <div>
+              <div className="h-4 w-16 bg-slate-200 rounded mb-2 animate-pulse" />
+              <div className="h-11 bg-slate-200 rounded-xl animate-pulse" />
+            </div>
+            
+            <div className="h-11 bg-indigo-200 rounded-xl animate-pulse mt-2" />
+          </div>
+          
+          <div className="mt-5 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="h-3 w-24 bg-slate-200 rounded mb-2 animate-pulse" />
+            <div className="space-y-1">
+              <div className="h-3 w-40 bg-slate-200 rounded animate-pulse" />
+              <div className="h-3 w-36 bg-slate-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="h-4 w-48 bg-slate-200 rounded mx-auto mt-5 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+// Main login content component
+function LoginContent() {
   const router = useRouter();
   const { login } = useAuth();
-  const [form, setForm]       = useState({ email: '', password: '' });
-  const [showPw, setShowPw]   = useState(false);
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
   const searchParams = useSearchParams();
-  const redirectTo   = searchParams.get('redirect') || '/'; // Redirect to the specified URL or default to the dashboard
+  const redirectTo = searchParams.get('redirect') || '/';
 
-  const handleLogin = async () => {
-    try {
-      await login(form);
-      router.push(redirectTo); // ← redirect back to job page
-    } catch (err) {
-      // handle error
-    }
-  };
   const set = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.email || !form.password) { setError('Please fill in all fields.'); return; }
+    if (!form.email || !form.password) { 
+      setError('Please fill in all fields.'); 
+      return; 
+    }
     try {
       setLoading(true);
       setError('');
       const user = await login(form.email, form.password);
-      router.push(user.role === 'admin' ? '/admin' : '/dashboard');
+      router.push(user.role === 'admin' ? '/admin' : redirectTo);
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials.');
     } finally {
       setLoading(false);
     }
   };
-  
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
@@ -89,8 +122,11 @@ export default function LoginPage() {
                   className="input-field pl-10 pr-10"
                   autoComplete="current-password"
                 />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                <button 
+                  type="button" 
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                >
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -126,5 +162,14 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// Main exported component with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoadingFallback />}>
+      <LoginContent />
+    </Suspense>
   );
 }
