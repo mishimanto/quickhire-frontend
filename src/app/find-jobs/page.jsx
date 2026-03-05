@@ -82,14 +82,6 @@ export default function FindJobsPage() {
   const [filters, setFilters]       = useState({ category: '', type: '' });
   const [showFilters, setShowFilters] = useState(false);
   const [totalJobs, setTotalJobs]   = useState(0);
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const s = searchParams.get('search')   || '';
-    const l = searchParams.get('location') || '';
-    setSearch(s);
-    setLocation(l);
-    }, []);
 
   useEffect(() => {
     categoriesApi.getAll().then(r => setCategories(r.data.data || []));
